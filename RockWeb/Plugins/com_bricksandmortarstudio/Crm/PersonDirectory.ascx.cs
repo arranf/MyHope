@@ -1,25 +1,10 @@
-// <copyright>
-// Copyright by the Spark Development Network
-//
-// Licensed under the Rock Community License (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.rockrms.com/license
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-// </copyright>
-//
-
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Web.UI.WebControls;
 using Rock;
 using Rock.Attribute;
@@ -29,7 +14,7 @@ using Rock.Model;
 using Rock.Web.Cache;
 using Rock.Web.UI.Controls;
 
-namespace Plugins.com_bricksandmortarstudio.Crm
+namespace com_bricksandmortarstudio.Crm
 {
     /// <summary>
     /// A directory of people in database.
@@ -47,12 +32,11 @@ namespace Plugins.com_bricksandmortarstudio.Crm
     [IntegerField( "First Name Characters Required", "The number of characters that need to be entered before allowing a search.", false, 1, "", 4 )]
     [IntegerField( "Last Name Characters Required", "The number of characters that need to be entered before allowing a search.", false, 3, "", 5 )]
     [IntegerField( "Max Results", "The maximum number of results to show on the page.", true, 600 )]
-    [MergeTemplateField( "Family Lava Template", "The lava template to use to display content for a family member", true, @"{% for definedValue in DefinedValues %}
+    [CodeEditorField( "Family Lava Template", "The lava template to use to display content for a family member", defaultValue:@"{% for definedValue in DefinedValues %}
     {{ definedValue.Value }}
-{% endfor %}", "", 4, key:"FamilyLava" )]
-    [MergeTemplateField( "Person Lava Template", "The lava template to use to display content for a person", true, @"{% for definedValue in DefinedValues %}
-    {{ definedValue.Value }}
-{% endfor %}", "", 4, key: "PersonLava" )]
+{% endfor %}", order:4, key:"FamilyLava" )]
+    [CodeEditorField( "Person Lava Template", "The lava template to use to display content for a person", defaultValue:@"{% for definedValue in DefinedValues %}
+    {{ definedValue.Value }}{% endfor %}", order:4, key:"PersonLava" )]
     [LavaCommandsField( "Enabled Lava Commands", "The Lava commands that should be enabled for the directory.", false, order: 2 )]
 
     public partial class PersonDirectory : Rock.Web.UI.RockBlock
@@ -69,11 +53,7 @@ namespace Plugins.com_bricksandmortarstudio.Crm
         private string _enabledLavaCommands = string.Empty;
         private string _familyLava;
         private string _personLava;
-
-        private Dictionary<int, List<Person>> _familyMembers = null;
-        private List<Person> _people = null;
-        private List<Group> _families = null;
-
+        
         #endregion
 
         #region Properties
@@ -90,9 +70,6 @@ namespace Plugins.com_bricksandmortarstudio.Crm
             base.OnInit( e );
 
             RockPage.AddScriptLink( ResolveRockUrl( "~/Scripts/jquery.lazyload.min.js" ) );
-
-            rptPeople.ItemDataBound += rptPeople_ItemDataBound;
-            rptFamilies.ItemDataBound += rptFamilies_ItemDataBound;
 
             // this event gets fired after block settings are updated. it's nice to repaint the screen if these settings would alter it
             this.BlockUpdated += Block_BlockUpdated;
@@ -192,75 +169,6 @@ namespace Plugins.com_bricksandmortarstudio.Crm
             }
 
             BindData();
-        }
-
-        private void rptPeople_ItemDataBound( object sender, RepeaterItemEventArgs e )
-        {
-            Person person = null;
-            var personIdentifier = e.Item.DataItem as int?;
-            if (personIdentifier != null)
-            {
-                person = _people.FirstOrDefault( p => p.Id == personIdentifier);
-            }
-            else
-            {
-                if (e.Item.DataItem != null)
-                {
-                    var personFamilyItem = e.Item.DataItem as PersonFamilyItem;
-                    if (personFamilyItem != null)
-                    {
-                        person = _familyMembers[personFamilyItem.FamilyId].FirstOrDefault(p => p.Id == personFamilyItem.PersonId);
-                    }
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            if (person == null)
-            {
-                return;
-            }
-
-            var mergeFields = LavaHelper.GetCommonMergeFields( null );
-            mergeFields.Add( "Person", person );
-            var contents = _personLava.ResolveMergeFields( mergeFields, _enabledLavaCommands );
-
-            var lLava = e.Item.FindControl( "lPersonLava" ) as Literal;
-            if ( lLava != null )
-            {
-                lLava.Text = contents;
-            }
-        }
-
-        private void rptFamilies_ItemDataBound( object sender, RepeaterItemEventArgs e )
-        {
-            int familyId = (int) e.Item.DataItem;
-
-            if (_familyMembers == null || !_familyMembers.ContainsKey(familyId))
-            {
-                return;
-            }
-
-            var lFamilyLava = e.Item.FindControl( "lFamilyLava" ) as Literal;
-            var rptFamilyPeople = e.Item.FindControl( "rptFamilyPeople" ) as Repeater;
-
-            if ( lFamilyLava != null )
-            {
-                var family = _families.FirstOrDefault( g => g.Id == familyId );
-                var mergeFields = LavaHelper.GetCommonMergeFields( null );
-                mergeFields.Add( "Family", family);
-                var contents = _familyLava.ResolveMergeFields( mergeFields, _enabledLavaCommands );
-                lFamilyLava.Text = contents;
-            }
-
-            if ( rptFamilyPeople != null )
-            {
-                rptFamilyPeople.ItemDataBound += rptPeople_ItemDataBound;
-                rptFamilyPeople.DataSource = _familyMembers[familyId].Select(p => new PersonFamilyItem {FamilyId = familyId, PersonId = p.Id});
-                rptFamilyPeople.DataBind();
-            }
         }
 
         protected void btnOptOutIn_Click( object sender, EventArgs e )
@@ -373,24 +281,17 @@ namespace Plugins.com_bricksandmortarstudio.Crm
 
                         if ( _showFamily )
                         {
-                            BindFamilies( rockContext, personQry, dvPersonIdQry );
+                            RenderFamilies( rockContext, personQry, dvPersonIdQry );
                         }
                         else
                         {
-                            BindPeople( rockContext, personQry );
+                            RenderPeople(personQry );
                         }
 
-                    }
-                    else
-                    {
-                        rptPeople.Visible = false;
-                        rptFamilies.Visible = false;
                     }
                 }
                 else
                 {
-                    rptPeople.Visible = false;
-                    rptFamilies.Visible = false;
                     ShowMessages( new List<string> { "This block requires a valid Data View setting." } );
                 }
 
@@ -407,21 +308,29 @@ namespace Plugins.com_bricksandmortarstudio.Crm
 
         }
 
-        private void BindPeople( RockContext rockContext, IQueryable<Person> personQry )
+        private void RenderPeople(IQueryable<Person> personQry )
         {
-            _people = personQry
+             var people = personQry
                 .OrderBy( p => p.LastName )
                 .ThenBy( p => p.NickName )
-                .Take( _maxResults )
-                .ToList();
+                .Take( _maxResults );
 
-            rptPeople.DataSource = _people.Select(p => p.Id);
-            rptPeople.DataBind();
-            rptPeople.Visible = true;
-            rptFamilies.Visible = false;
+            var stopwatch = new Stopwatch();
+            var stringBuilder = new StringBuilder();
+
+            stopwatch.Start();
+            var mergeFields = LavaHelper.GetCommonMergeFields( null, null, new CommonMergeFieldsOptions { GetLegacyGlobalMergeFields  = false} );
+            foreach (var person in people)
+            {
+                mergeFields.Add("Person", person);
+                stringBuilder.Append(_personLava.ResolveMergeFields(mergeFields));
+                mergeFields.Remove("Person");
+            }
+            stopwatch.Stop();
+            lLava.Text = stringBuilder.ToString();
         }
 
-        private void BindFamilies( RockContext rockContext, IQueryable<Person> personQry, IQueryable<int> dataviewPersonIdQry )
+        private void RenderFamilies( RockContext rockContext, IQueryable<Person> personQry, IQueryable<int> dataviewPersonIdQry )
         {
             var familyGroupType = GroupTypeCache.Read( Rock.SystemGuid.GroupType.GROUPTYPE_FAMILY.AsGuid() );
 
@@ -437,36 +346,33 @@ namespace Plugins.com_bricksandmortarstudio.Crm
 
             var groupService = new GroupService(rockContext);
 
-            _families = groupService
+            var familyMembers = groupService
                 .Queryable().AsNoTracking()
                 .Where(g => familyIdQry.Contains(g.Id))
-                .ToList();
-
-            _familyMembers = groupService
-                .Queryable().AsNoTracking()
-                .Where( g => familyIdQry.Contains( g.Id ) )
-                .Select( g => new
+                .Select(g => new
                 {
-                    GroupId = g.Id,
+                    Family = g,
                     People = g.Members
-                        .Where( m => dataviewPersonIdQry.Contains( m.PersonId ) )
-                        .OrderBy( m => m.GroupRole.Order )
-                        .ThenBy( m => m.Person.BirthDate )
-                        .Select( m => m.Person )
+                        .Where(m => dataviewPersonIdQry.Contains(m.PersonId))
+                        .OrderBy(m => m.GroupRole.Order)
+                        .ThenBy(m => m.Person.BirthDate)
+                        .Select(m => m.Person)
                         .ToList()
-                } )
-                .ToDictionary( k => k.GroupId, v => v.People );
+                })
+            .Take( GetAttributeValue( "MaxResults" ).AsInteger() );
 
-            var families = groupMemberQry.Select( m => m.GroupId)
-            .Distinct()
-            .Take( GetAttributeValue( "MaxResults" ).AsInteger() )
-            .ToList();
-
-            rptFamilies.DataSource = families;
-            rptFamilies.DataBind();
-            rptFamilies.Visible = true;
-
-            rptPeople.Visible = false;
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            var stringBuilder = new StringBuilder();
+            foreach ( var familyGrouping in familyMembers)
+            {
+                var mergeFields = LavaHelper.GetCommonMergeFields( null );
+                mergeFields.Add("People", familyGrouping.People);
+                mergeFields.Add( "Family", familyGrouping.Family );
+                stringBuilder.Append( _familyLava.ResolveMergeFields( mergeFields, _enabledLavaCommands ) );
+            }
+            stopwatch.Stop();
+            lLava.Text = stringBuilder.ToString();
         }
 
         private void OptInOutPerson( RockContext rockContext, Person person, bool optIn )
@@ -512,13 +418,5 @@ namespace Plugins.com_bricksandmortarstudio.Crm
         }
 
         #endregion
-
-        protected class PersonFamilyItem
-        {
-            public int FamilyId { get; set; }
-            public int PersonId { get; set; }
-        }
-
-
     }
 }

@@ -1,4 +1,4 @@
-<%@ Control Language="C#" AutoEventWireup="true" CodeFile="PersonDirectory.ascx.cs" Inherits="Plugins.com_bricksandmortarstudio.Crm.PersonDirectory" %>
+<%@ Control Language="C#" AutoEventWireup="true" CodeFile="PersonDirectory.ascx.cs" Inherits="com_bricksandmortarstudio.Crm.PersonDirectory" %>
 
 <asp:UpdatePanel ID="upnlContent" runat="server">
     <ContentTemplate>
@@ -15,7 +15,7 @@
         <asp:Panel ID="pnlView" runat="server" CssClass="panel panel-block" DefaultButton="lbSearch">
 
             <div class="panel-heading">
-                <h1 class="panel-title"><i class="fa fa-users"></i>Directory</h1>
+                <h1 class="panel-title"><i class="fa fa-users"></i> Directory</h1>
             </div>
             <div class="panel-body">
 
@@ -44,34 +44,7 @@
                 </ul>
 
                 <div class="directory-grid">
-
-                    <asp:Repeater ID="rptPeople" runat="server">
-                        <ItemTemplate>
-                            <div class="row padding-v-lg">
-                                <asp:Literal ID="lPersonLava" runat="server" />
-                            </div>
-                        </ItemTemplate>
-                    </asp:Repeater>
-
-                    <asp:Repeater ID="rptFamilies" runat="server">
-                        <ItemTemplate>
-                            <div class="row padding-v-lg">
-                                <div class="col-sm-3 margin-b-lg">
-                                    <asp:Literal ID="lFamilyLava" runat="server" />
-                                </div>
-                                <div class="col-sm-9">
-                                    <asp:Repeater ID="rptFamilyPeople" runat="server">
-                                        <ItemTemplate>
-                                            <div class="row margin-b-md">
-                                                <asp:Literal ID="lPersonLava" runat="server" />
-                                            </div>
-                                        </ItemTemplate>
-                                    </asp:Repeater>
-                                </div>
-                            </div>
-                        </ItemTemplate>
-                    </asp:Repeater>
-
+                    <asp:Literal runat="server" ID="lLava"></asp:Literal>
                 </div>
 
                 <asp:Panel ID="pnlOptOut" runat="server" CssClass="actions margin-t-lg">
