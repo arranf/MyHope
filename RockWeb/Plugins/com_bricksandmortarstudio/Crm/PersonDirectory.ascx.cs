@@ -314,11 +314,8 @@ namespace com_bricksandmortarstudio.Crm
                 .OrderBy( p => p.LastName )
                 .ThenBy( p => p.NickName )
                 .Take( _maxResults );
-
-            var stopwatch = new Stopwatch();
             var stringBuilder = new StringBuilder();
-
-            stopwatch.Start();
+            
             var mergeFields = LavaHelper.GetCommonMergeFields( null, null, new CommonMergeFieldsOptions { GetLegacyGlobalMergeFields  = false} );
             foreach (var person in people)
             {
@@ -326,7 +323,6 @@ namespace com_bricksandmortarstudio.Crm
                 stringBuilder.Append(_personLava.ResolveMergeFields(mergeFields));
                 mergeFields.Remove("Person");
             }
-            stopwatch.Stop();
             lLava.Text = stringBuilder.ToString();
         }
 
