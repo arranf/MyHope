@@ -1,0 +1,24 @@
+{% assign homePhone = Person | PhoneNumber:'Home' %}
+{% assign mobilePhone = Person | PhoneNumber:'Mobile' %}
+{% assign preferences = Person | Attribute:'DirectoryData' %}
+
+{% if preferences != '' %}
+<div class="row padding-v-md">
+<div class="col-md-12">
+	<div class="col-sm-1">
+		<div class="photo-round photo-round-sm" data-original="{{Person.PhotoUrl}}&w=150" style="background-image: url('/Assets/Images/person-no-photo-{% if person.Gender == "Female" %}female{%else%}male{%endif%}.svg')"></div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="margin-1-sm">
+			<strong>{{Person.FullName}}</strong>
+			<br />
+			{% if preferences contains 'Email' %} {{Person.Email}} {% endif %}
+		</div>
+	</div>
+	<div class='col-sm-5 clearfix'>
+		{% if homePhone and preferences contains 'Home' %}<strong>Home Phone:</strong><br /> {{homePhone}}<br />{% endif %}{% if mobilePhone and preferences contains 'Mobile' %}<strong>Mobile:</strong><br /> {{mobilePhone}} {% endif %}
+	</div>
+</div>
+</div>
+{% endif %}

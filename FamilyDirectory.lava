@@ -1,0 +1,52 @@
+{% assign address = People[0] | Address:'Home', '[[FormattedHtmlAddress]]' %}
+{% assign mapAddress = People[0] | Address:'MapLocation', '[[FormattedAddress]]' %}
+{% assign showAddress = Family | Attribute:'ShowAddressInDirectory' %}
+
+<div class="row padding-v-lg">
+    <div class="col-md-3 col-sm-12 margin-b-lg"> <!-- Family Part -->
+        <div class="col-md-12 col-sm-3">
+            <strong>{{Family.Name}}</strong>
+            {% if showAddress == 'Yes' %}
+                {% capture urlFragment %}{{mapAddress}}+({{Family.Name}}){%endcapture%}
+                <a href="http://maps.google.com/maps?q={{urlFragment | EscapeDataString }}"><i class="fa fa-2x fa-map-marker"></i></a>
+            {% endif %}
+        </div>
+        
+        <div class="col-md-12 col-sm-9">
+            {% if showAddress == 'Yes' %} 
+                {{address}}
+            {% else %}
+                Address Unlisted
+            {% endif %}
+        </div>
+    </div>
+    
+    {% for Person in People %}
+    <div class="col-md-9 col-sm-12">
+        <div class="row margin-b-md">
+            {% assign homePhone = Person | PhoneNumber:'Home' %}
+            {% assign mobilePhone = Person | PhoneNumber:'Mobile' %}
+            {% assign preferences = Person | Attribute:'DirectoryData' %}
+            
+            {% if preferences != '' %}
+            <div class="col-md-12">
+            	<div class="col-sm-1">
+            		<div class="photo-round photo-round-sm" data-original="{{Person.PhotoUrl}}&w=150" style="background-image: url('/Assets/Images/person-no-photo-{% if person.Gender == "Female" %}female{%else%}male{%endif%}.svg')"></div>
+            	</div>
+            
+            	<div class="col-sm-6">
+            		<div class="margin-1-sm">
+            			<strong>{{Person.FullName}}</strong>
+            			<br />
+            			{% if preferences contains 'Email' %} {{Person.Email}} {% endif %}
+            		</div>
+            	</div>
+            	<div class='col-sm-5 clearfix'>
+            		{% if homePhone and preferences contains 'Home' %}<strong>Home Phone:</strong><br /> {{homePhone}}<br />{% endif %}{% if mobilePhone and preferences contains 'Mobile' %}<strong>Mobile:</strong><br /> {{mobilePhone}} {% endif %}
+            	</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
