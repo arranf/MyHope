@@ -1,1 +1,6 @@
 /*.dll
+*.suo
+/packages/*.*
+.vs
+org.hopecorby.*/obj/
+org.hopecorby.*/bin/
